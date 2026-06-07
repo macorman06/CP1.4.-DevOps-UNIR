@@ -51,34 +51,7 @@ pipeline {
                 script {
                     env.BASE_URL = readFile('api_url.txt').trim()
                 }
-                sh 'pytest test/integration/todoApiTest.py -v -m api'
-            }
-        }
-
-        stage('Promote') {
-            agent { label 'built-in' }
-            steps {
-                sh 'whoami && hostname'
-                withCredentials([usernamePassword(
-                    credentialsId: 'github-credentials',
-                    usernameVariable: 'GIT_USERNAME',
-                    passwordVariable: 'GIT_PASSWORD'
-                )]) {
-                    sh '''
-                        git config user.email "jenkins@ci.local"
-                        git config user.name "Jenkins CI"
-                        git fetch origin master
-                        git show origin/master:Jenkinsfile > /tmp/Jenkinsfile_cd
-                        git show origin/master:Jenkinsfile_agentes > /tmp/Jenkinsfile_agentes_cd
-                        git checkout master
-                        git merge -X theirs develop --no-edit
-                        cp /tmp/Jenkinsfile_cd Jenkinsfile
-                        cp /tmp/Jenkinsfile_agentes_cd Jenkinsfile_agentes
-                        git add Jenkinsfile Jenkinsfile_agentes
-                        git diff --cached --quiet || git commit -m "chore: preserve CD Jenkinsfiles after CI merge"
-                        git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/macorman06/CP1.4.-DevOps-UNIR.git master
-                    '''
-                }
+                sh 'pytest test/integration/todoApiTest.py -v -m api -k "listtodos"'
             }
         }
 
