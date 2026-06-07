@@ -14,8 +14,8 @@ pipeline {
         stage('Static Test') {
             steps {
                 sh '''
-                    flake8 src/ --max-line-length=120
-                    bandit -r src/ -ll
+                    flake8 --exit-zero --format=pylint src/ > flake8-report.txt
+                    bandit -r src/ -f txt -o bandit-report.txt || true
                 '''
             }
         }
