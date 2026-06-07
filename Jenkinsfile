@@ -14,6 +14,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
+                    curl -o samconfig.toml https://raw.githubusercontent.com/macorman06/CP1.4.-DevOps-UNIR-config/production/samconfig.toml
                     sam build
                     sam validate --region us-east-1
                     sam deploy \
