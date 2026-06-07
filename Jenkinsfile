@@ -26,7 +26,8 @@ pipeline {
                     sam build
                     sam deploy \
                         --config-env staging \
-                        --no-confirm-changeset
+                        --no-confirm-changeset \
+                        --no-fail-on-empty-changeset
                 '''
             }
         }
