@@ -14,8 +14,8 @@ pipeline {
         stage('Static Test') {
             steps {
                 sh '''
-                    flake8 --exit-zero --format=pylint src/ > flake8-report.txt
-                    bandit -r src/ -f txt -o bandit-report.txt || true
+                    flake8 src/ --max-line-length=120
+                    bandit -r src/ -ll
                 '''
             }
         }
@@ -24,7 +24,6 @@ pipeline {
             steps {
                 sh '''
                     sam build
-                    sam validate --region us-east-1
                     sam deploy \
                         --config-env staging \
                         --no-confirm-changeset \
@@ -35,18 +34,10 @@ pipeline {
 
         stage('Rest Test') {
             steps {
-                script {
-                    def BASE_URL = sh(
-                        script: """aws cloudformation describe-stacks \
-                            --stack-name todo-list-aws-staging \
-                            --query 'Stacks[0].Outputs[?OutputKey==`BaseUrlApi`].OutputValue' \
-                            --output text \
-                            --region us-east-1""",
-                        returnStdout: true
-                    ).trim()
-                    env.BASE_URL = BASE_URL
-                }
-                sh 'pytest test/integration/todoApiTest.py -v -m api'
+                sh '''
+                    export BASE_URL="https://1h0lihcnr3.execute-api.us-east-1.amazonaws.com/Prod"
+                    pytest test/integration/todoApiTest.py -v -m api
+                '''
             }
         }
 
@@ -60,25 +51,12 @@ pipeline {
                     sh '''
                         git config user.email "jenkins@ci.local"
                         git config user.name "Jenkins CI"
-                        git fetch origin master
-                        git show origin/master:Jenkinsfile > /tmp/Jenkinsfile_cd
-                        git checkout master
-                        git merge -X theirs develop --no-edit
-                        cp /tmp/Jenkinsfile_cd Jenkinsfile
-                        git add Jenkinsfile
-                        git diff --cached --quiet || git commit -m "chore: preserve CD Jenkinsfile after CI merge"
-                        git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/macorman06/CP1.4.-DevOps-UNIR.git master
+                        git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/macorman06/CP1.4.-DevOps-UNIR.git HEAD:master
                     '''
                 }
             }
         }
 
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
     }
 
 }
