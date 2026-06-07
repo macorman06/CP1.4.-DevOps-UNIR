@@ -1,0 +1,68 @@
+pipeline {
+    agent none
+
+    stages {
+
+        stage('Get Code') {
+            agent { label 'built-in' }
+            steps {
+                git branch: 'master',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/macorman06/CP1.4.-DevOps-UNIR.git'
+                sh 'whoami && hostname'
+            }
+        }
+
+        stage('Deploy') {
+            agent { label 'built-in' }
+            steps {
+                sh 'whoami && hostname'
+                sh '''
+                    sam build
+                    sam validate --region us-east-1
+                    sam deploy \
+                        --config-env production \
+                        --no-confirm-changeset \
+                        --no-fail-on-empty-changeset
+                '''
+                script {
+                    def BASE_URL = sh(
+                        script: """aws cloudformation describe-stacks \
+                            --stack-name todo-list-aws-production \
+                            --query 'Stacks[0].Outputs[?OutputKey==`BaseUrlApi`].OutputValue' \
+                            --output text \
+                            --region us-east-1""",
+                        returnStdout: true
+                    ).trim()
+                    writeFile file: 'api_url.txt', text: BASE_URL
+                    stash name: 'api-url', includes: 'api_url.txt'
+                }
+            }
+        }
+
+        stage('Rest Test') {
+            agent { label 'agent2' }
+            steps {
+                sh 'whoami && hostname'
+                git branch: 'master',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/macorman06/CP1.4.-DevOps-UNIR.git'
+                unstash 'api-url'
+                script {
+                    env.BASE_URL = readFile('api_url.txt').trim()
+                }
+                sh 'pytest test/integration/todoApiTest.py -v -m api -k "listtodos"'
+            }
+        }
+
+    }
+
+    post {
+        always {
+            node('built-in') {
+                cleanWs()
+            }
+        }
+    }
+
+}
