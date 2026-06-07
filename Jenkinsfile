@@ -35,10 +35,18 @@ pipeline {
 
         stage('Rest Test') {
             steps {
-                sh '''
-                    export BASE_URL="https://1h0lihcnr3.execute-api.us-east-1.amazonaws.com/Prod"
-                    pytest test/integration/todoApiTest.py -v -m api
-                '''
+                script {
+                    def BASE_URL = sh(
+                        script: """aws cloudformation describe-stacks \
+                            --stack-name todo-list-aws-staging \
+                            --query 'Stacks[0].Outputs[?OutputKey==`BaseUrlApi`].OutputValue' \
+                            --output text \
+                            --region us-east-1""",
+                        returnStdout: true
+                    ).trim()
+                    env.BASE_URL = BASE_URL
+                }
+                sh 'pytest test/integration/todoApiTest.py -v -m api'
             }
         }
 
