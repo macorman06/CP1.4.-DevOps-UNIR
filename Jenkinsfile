@@ -34,7 +34,7 @@ pipeline {
         stage('Rest Test') {
             steps {
                 sh '''
-                    BASE_URL="https://1h0lihcnr3.execute-api.us-east-1.amazonaws.com/Prod"
+                    export BASE_URL="https://1h0lihcnr3.execute-api.us-east-1.amazonaws.com/Prod"
                     pytest test/integration/todoApiTest.py -v -m api
                 '''
             }
