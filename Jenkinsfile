@@ -60,7 +60,14 @@ pipeline {
                     sh '''
                         git config user.email "jenkins@ci.local"
                         git config user.name "Jenkins CI"
-                        git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/macorman06/CP1.4.-DevOps-UNIR.git HEAD:master
+                        git fetch origin master
+                        git show origin/master:Jenkinsfile > /tmp/Jenkinsfile_cd
+                        git checkout master
+                        git merge -X theirs develop --no-edit
+                        cp /tmp/Jenkinsfile_cd Jenkinsfile
+                        git add Jenkinsfile
+                        git diff --cached --quiet || git commit -m "chore: preserve CD Jenkinsfile after CI merge"
+                        git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/macorman06/CP1.4.-DevOps-UNIR.git master
                     '''
                 }
             }
