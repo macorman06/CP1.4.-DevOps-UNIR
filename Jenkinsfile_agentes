@@ -83,11 +83,13 @@ pipeline {
                         git config user.name "Jenkins CI"
                         git fetch origin master
                         git show origin/master:Jenkinsfile > /tmp/Jenkinsfile_cd
+                        git show origin/master:Jenkinsfile_agentes > /tmp/Jenkinsfile_agentes_cd
                         git checkout master
                         git merge -X theirs develop --no-edit
                         cp /tmp/Jenkinsfile_cd Jenkinsfile
-                        git add Jenkinsfile
-                        git diff --cached --quiet || git commit -m "chore: preserve CD Jenkinsfile after CI merge"
+                        cp /tmp/Jenkinsfile_agentes_cd Jenkinsfile_agentes
+                        git add Jenkinsfile Jenkinsfile_agentes
+                        git diff --cached --quiet || git commit -m "chore: preserve CD Jenkinsfiles after CI merge"
                         git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/macorman06/CP1.4.-DevOps-UNIR.git master
                     '''
                 }
